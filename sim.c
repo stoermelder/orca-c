@@ -70,6 +70,14 @@ static U8 midi_note_number_of(Glyph g) {
   return (U8)(deg / 7 * 12 + (I8[]){0, 2, 4, 5, 7, 9, 11}[deg % 7] + sharp);
 }
 
+// Inverse: map an absolute MIDI semitone number to the closest glyph.
+// Lowercase glyphs represent a sharp (one semitone above the natural).
+static Glyph from_midi_note_number(U8 note) {
+  static const int notes[12] = { 'C', 'c', 'D', 'd', 'E', 'F',
+                                 'f', 'G', 'g', 'A', 'a', 'B' };
+  return (Glyph)notes[note % 12];
+}
+
 typedef struct {
   Glyph *vars_slots;
   Oevent_list *oevent_list;
@@ -155,7 +163,9 @@ static void oper_poke_and_stun(Glyph *restrict gbuffer, Mark *restrict mbuffer,
   _(':', midi)                                                                 \
   _(';', udp)                                                                  \
   _('=', osc)                                                                  \
-  _('?', midipb)
+  _('?', midipb)                                                               \
+  _('<', vcvin)                                                                \
+  _('>', vcvout)                                                               \
 
 #define ALPHA_OPERATORS(_)                                                     \
   _('A', add)                                                                  \
@@ -395,6 +405,90 @@ BEGIN_OPERATOR(midipb)
   oe->channel = (U8)channel;
   oe->msb = (U8)(index_of(msb_g) * 127 / 35); // 0~35 -> 0~127
   oe->lsb = (U8)(index_of(lsb_g) * 127 / 35);
+END_OPERATOR
+
+BEGIN_OPERATOR(vcvin)
+  for (Usz i = 1; i < 4; ++i) {
+    PORT(0, (Isz)i, IN);
+  }
+  PORT(1, 0, OUT);
+  STOP_IF_NOT_BANGED;
+  PORT(0, 0, OUT);
+  Glyph a_g = PEEK(0, 1);
+  Glyph port_g = PEEK(0, 2);
+  Glyph b_g = PEEK(0, 3);
+  Usz a = index_of(a_g);
+  Usz b = index_of(b_g);
+  Usz port_index = index_of(port_g);
+  if (port_g == '.')
+    return;
+  if (b == 0)
+    b = 36;
+  Usz min, max;
+  if (a == b) {
+    POKE(1, 0, glyph_of(a));
+    return;
+  } else if (a < b) {
+    min = a;
+    max = b;
+  } else {
+    min = b;
+    max = a;
+  }
+  // Get value from C++ code
+  Usz val = custom_vcvin((void*)extra_params->oevent_list, port_index, min, max);
+  if (port_g >= 'a' && port_g <= 'd') {
+    // Letter ports 'a'..'d' => note mode
+    Glyph g = from_midi_note_number((U8)val);
+    POKE(1, 0, g);
+    return;
+  }
+  else {
+    POKE(1, 0, glyph_of(val));
+  }
+END_OPERATOR
+
+BEGIN_OPERATOR(vcvout)
+  for (Usz i = 1; i < 5; ++i) {
+    PORT(0, (Isz)i, IN);
+  }
+  STOP_IF_NOT_BANGED;
+  PORT(0, 0, OUT);
+  Glyph port_g = PEEK(0, 1);
+  Glyph a_g = PEEK(0, 2);
+  Glyph v_g = PEEK(0, 3);
+  Glyph b_g = PEEK(0, 4);
+  Usz a = index_of(a_g);
+  Usz b = index_of(b_g);
+  Usz port_index = index_of(port_g);
+  if (v_g == '.')
+    return;
+  if (port_g == '.')
+    return;
+  if (port_g >= 'a' && port_g <= 'd') {
+    // Letter ports 'a'..'d' => note mode
+    if (v_g == '.')
+      return;
+    U8 note_num = midi_note_number_of(v_g);
+    if (note_num == UINT8_MAX)
+      return;
+    custom_vcvout((void*)extra_params->oevent_list, port_index, a, 0.f, note_num);
+  }
+  else {
+    Usz v = index_of(v_g);
+    Usz min, max;
+    if (a == b) {
+      POKE(1, 0, glyph_of(a));
+      return;
+    } else if (a < b) {
+      min = a;
+      max = b;
+    } else {
+      min = b;
+      max = a;
+    }
+    custom_vcvout((void*)extra_params->oevent_list, port_index, min, max, v);
+  }
 END_OPERATOR
 
 BEGIN_OPERATOR(add)

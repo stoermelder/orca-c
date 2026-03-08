@@ -1,6 +1,6 @@
 #include "sysmisc.h"
 #include "gbuffer.h"
-#include "oso.h"
+#include "thirdparty/oso.h"
 #include <ctype.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -348,7 +348,11 @@ Conf_save_start_error conf_save_start(Conf_save *p,
   if (!p->tempfile) {
     // Try to create config dir, in case it doesn't exist. (XDG says we should
     // do this, and use mode 0700.)
+#ifdef _WIN32
+    mkdir(osoc(dir));
+#else
     mkdir(osoc(dir), 0700);
+#endif
     p->tempfile = fopen(osoc(p->temppath), "w");
   }
   if (!p->tempfile) {

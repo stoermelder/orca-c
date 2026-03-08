@@ -1,11 +1,16 @@
 #include "osc_out.h"
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
-#include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <stdio.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#endif
+#include <errno.h>
+#include <stdio.h>
 
 struct Oosc_dev {
   int fd;
