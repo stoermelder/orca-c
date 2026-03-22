@@ -423,7 +423,7 @@ BEGIN_OPERATOR(vcvin)
   if (port_g == '.')
     return;
   if (b == 0)
-    b = 36;
+    b = 35;
   Usz min, max;
   if (a == b) {
     POKE(1, 0, glyph_of(a));
