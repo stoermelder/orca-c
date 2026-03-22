@@ -472,7 +472,7 @@ BEGIN_OPERATOR(vcvout)
     U8 note_num = midi_note_number_of(v_g);
     if (note_num == UINT8_MAX)
       return;
-    custom_vcvout((void*)extra_params->oevent_list, port_index, a, 0.f, note_num);
+    custom_vcvout((void*)extra_params->oevent_list, port_index, a, b, note_num);
   }
   else {
     Usz v = index_of(v_g);
