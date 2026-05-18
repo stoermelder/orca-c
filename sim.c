@@ -157,6 +157,7 @@ static void oper_poke_and_stun(Glyph *restrict gbuffer, Mark *restrict mbuffer,
 
 #define UNIQUE_OPERATORS(_)                                                    \
   _('!', midicc)                                                               \
+  _('+', pending_bang)                                                         \
   _('#', comment)                                                              \
   _('%', midi)                                                                 \
   _('*', bang)                                                                 \
@@ -278,6 +279,10 @@ END_OPERATOR
 
 BEGIN_OPERATOR(bang)
   gbuffer_poke(gbuffer, height, width, y, x, '.');
+END_OPERATOR
+
+BEGIN_OPERATOR(pending_bang)
+  gbuffer_poke(gbuffer, height, width, y, x, '*');
 END_OPERATOR
 
 BEGIN_OPERATOR(midi)
