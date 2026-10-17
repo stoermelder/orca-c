@@ -7,6 +7,7 @@ typedef enum {
   Oevent_type_midi_pb,
   Oevent_type_osc_ints,
   Oevent_type_udp_string,
+  Oevent_type_command,
 } Oevent_types;
 
 typedef struct {
@@ -45,6 +46,14 @@ typedef struct {
   char chars[Oevent_udp_string_count];
 } Oevent_udp_string;
 
+enum { Oevent_command_count = 36 };
+
+typedef struct {
+  U8 oevent_type;
+  U8 count;
+  char chars[Oevent_command_count];
+} Oevent_command;
+
 typedef union {
   Oevent_any any;
   Oevent_midi_note midi_note;
@@ -52,6 +61,7 @@ typedef union {
   Oevent_midi_pb midi_pb;
   Oevent_osc_ints osc_ints;
   Oevent_udp_string udp_string;
+  Oevent_command command;
 } Oevent;
 
 typedef struct {

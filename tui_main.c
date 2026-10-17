@@ -653,6 +653,14 @@ staticni void draw_oevent_list(WINDOW *win, Oevent_list const *oevent_list) {
       }
       break;
     }
+    case Oevent_type_command: {
+      Oevent_command const *eo = &ev->command;
+      wprintw(win, "CMD\tcount %d\t", (int)eo->count);
+      for (Usz j = 0; j < (Usz)eo->count; ++j) {
+        waddch(win, (chtype)eo->chars[j]);
+      }
+      break;
+    }
     }
   }
 }
@@ -1164,6 +1172,9 @@ staticni void send_output_events(Oosc_dev *oosc_dev, Midi_mode *midi_mode,
       oosc_send_datagram(oosc_dev, eo->chars, eo->count);
       break;
     }
+    case Oevent_type_command:
+      // Commands are executed by hosts with a commander (AHAB); ignored here.
+      break;
     }
   }
 

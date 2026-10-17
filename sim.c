@@ -164,6 +164,7 @@ static void oper_poke_and_stun(Glyph *restrict gbuffer, Mark *restrict mbuffer,
   _(':', midi)                                                                 \
   _(';', udp)                                                                  \
   _('=', osc)                                                                  \
+  _('$', command)                                                              \
   _('?', midipb)                                                               \
   _('<', vcvin)                                                                \
   _('>', vcvout)                                                               \
@@ -415,6 +416,37 @@ BEGIN_OPERATOR(midipb)
   oe->channel = (U8)channel;
   oe->msb = (U8)(index_of(msb_g) * 127 / 35); // 0~35 -> 0~127
   oe->lsb = (U8)(index_of(lsb_g) * 127 / 35);
+END_OPERATOR
+
+// Same layout as ORCA's (JS) '$': the command text is read from the glyphs to
+// the right up to the first '.' and handed to the host when banged.
+BEGIN_OPERATOR(command)
+  Usz n = width - x - 1;
+  if (n > Oevent_command_count)
+    n = Oevent_command_count;
+  Glyph const *restrict gline = gbuffer + y * width + x + 1;
+  Mark *restrict mline = mbuffer + y * width + x + 1;
+  Glyph cpy[Oevent_command_count];
+  Usz i;
+  for (i = 0; i < n; ++i) {
+    Glyph g = gline[i];
+    if (g == '.')
+      break;
+    cpy[i] = g;
+    mline[i] |= Mark_flag_lock;
+  }
+  n = i;
+  STOP_IF_NOT_BANGED;
+  if (n == 0)
+    return;
+  PORT(0, 0, OUT);
+  Oevent_command *oe =
+      &oevent_list_alloc_item(extra_params->oevent_list)->command;
+  oe->oevent_type = (U8)Oevent_type_command;
+  oe->count = (U8)n;
+  for (i = 0; i < n; ++i) {
+    oe->chars[i] = cpy[i];
+  }
 END_OPERATOR
 
 BEGIN_OPERATOR(vcvin)
