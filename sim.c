@@ -363,22 +363,27 @@ BEGIN_OPERATOR(udp)
 END_OPERATOR
 
 BEGIN_OPERATOR(osc)
+  // Same layout as ORCA (JS): path at +1, message glyphs from +2 up to the
+  // first '.' (like ';'), each sent as its base-36 value.
   PORT(0, 1, IN | PARAM);
-  PORT(0, 2, IN | PARAM);
-  Usz len = index_of(PEEK(0, 2));
-  if (len > Oevent_osc_int_count)
-    len = Oevent_osc_int_count;
-  for (Usz i = 0; i < len; ++i) {
-    PORT(0, (Isz)i + 3, IN);
+  Usz n = x + 2 < width ? width - x - 2 : 0;
+  if (n > Oevent_osc_int_count)
+    n = Oevent_osc_int_count;
+  Glyph const *restrict gline = gbuffer + y * width + x + 2;
+  Mark *restrict mline = mbuffer + y * width + x + 2;
+  U8 buff[Oevent_osc_int_count];
+  Usz len;
+  for (len = 0; len < n; ++len) {
+    Glyph c = gline[len];
+    if (c == '.')
+      break;
+    buff[len] = (U8)index_of(c);
+    mline[len] |= Mark_flag_lock;
   }
   STOP_IF_NOT_BANGED;
   Glyph g = PEEK(0, 1);
   if (g != '.') {
     PORT(0, 0, OUT);
-    U8 buff[Oevent_osc_int_count];
-    for (Usz i = 0; i < len; ++i) {
-      buff[i] = (U8)index_of(PEEK(0, (Isz)i + 3));
-    }
     Oevent_osc_ints *oe =
         &oevent_list_alloc_item(extra_params->oevent_list)->osc_ints;
     oe->oevent_type = (U8)Oevent_type_osc_ints;
