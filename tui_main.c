@@ -1274,7 +1274,7 @@ staticni void clear_and_run_vm(Glyph *restrict gbuf, Mark *restrict mbuf,
                                Oevent_list *oevent_list, Usz random_seed) {
   mbuffer_clear(mbuf, height, width);
   oevent_list_clear(oevent_list);
-  orca_run(gbuf, mbuf, height, width, tick_number, oevent_list, random_seed);
+  orca_run(gbuf, mbuf, height, width, tick_number, oevent_list, random_seed, NULL);
 }
 
 staticni void ged_do_stuff(Ged *a) {

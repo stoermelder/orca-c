@@ -82,6 +82,7 @@ typedef struct {
   Glyph *vars_slots;
   Oevent_list *oevent_list;
   Usz random_seed;
+  Orca_host const *host;
 } Oper_extra_params;
 
 static void oper_poke_and_stun(Glyph *restrict gbuffer, Mark *restrict mbuffer,
@@ -478,7 +479,8 @@ BEGIN_OPERATOR(vcvin)
     max = a;
   }
   // Get value from C++ code
-  Usz val = custom_vcvin((void*)extra_params->oevent_list, port_index, min, max);
+  Orca_host const *host = extra_params->host;
+  Usz val = (host && host->cv_in) ? host->cv_in(host->ctx, port_index, min, max) : 0;
   if (port_g >= 'a' && port_g <= 'd') {
     // Letter ports 'a'..'d' => note mode
     Glyph g = from_midi_note_number((U8)val);
@@ -514,7 +516,9 @@ BEGIN_OPERATOR(vcvout)
     U8 note_num = midi_note_number_of(v_g);
     if (note_num == UINT8_MAX)
       return;
-    custom_vcvout((void*)extra_params->oevent_list, port_index, a, b, note_num);
+    Orca_host const *host = extra_params->host;
+    if (host && host->cv_out)
+      host->cv_out(host->ctx, port_index, a, b, note_num);
   }
   else {
     Usz v = index_of(v_g);
@@ -529,7 +533,9 @@ BEGIN_OPERATOR(vcvout)
       min = b;
       max = a;
     }
-    custom_vcvout((void*)extra_params->oevent_list, port_index, min, max, v);
+    Orca_host const *host = extra_params->host;
+    if (host && host->cv_out)
+      host->cv_out(host->ctx, port_index, min, max, v);
   }
 END_OPERATOR
 
@@ -882,13 +888,15 @@ END_OPERATOR
 //////// Run simulation
 
 void orca_run(Glyph *restrict gbuf, Mark *restrict mbuf, Usz height, Usz width,
-              Usz tick_number, Oevent_list *oevent_list, Usz random_seed) {
+              Usz tick_number, Oevent_list *oevent_list, Usz random_seed,
+              Orca_host const *host) {
   Glyph vars_slots[Glyphs_index_count];
   memset(vars_slots, '.', sizeof(vars_slots));
   Oper_extra_params extras;
   extras.vars_slots = &vars_slots[0];
   extras.oevent_list = oevent_list;
   extras.random_seed = random_seed;
+  extras.host = host;
 
   for (Usz iy = 0; iy < height; ++iy) {
     Glyph const *glyph_row = gbuf + iy * width;

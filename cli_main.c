@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
     mbuffer_clear(mbuf_r.buffer, field.height, field.width);
     oevent_list_clear(&oevent_list);
     orca_run(field.buffer, mbuf_r.buffer, field.height, field.width, i,
-             &oevent_list, 0);
+             &oevent_list, 0, NULL);
   }
   mbuf_reusable_deinit(&mbuf_r);
   oevent_list_deinit(&oevent_list);

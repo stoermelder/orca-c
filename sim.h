@@ -6,14 +6,17 @@
 extern "C" {
 #endif
 
+// Host I/O for the '<' (CV in) and '>' (CV out) operators. orca-c never looks inside ctx.
+typedef struct {
+  void *ctx;
+  Usz (*cv_in)(void *ctx, Usz port, Usz a, Usz b);
+  void (*cv_out)(void *ctx, Usz port, Usz a, Usz b, Usz value);
+} Orca_host;
+
+// `host` may be NULL: '<' then reads 0 and '>' does nothing.
 void orca_run(Glyph *restrict gbuffer, Mark *restrict mbuffer, Usz height,
               Usz width, Usz tick_number, Oevent_list *oevent_list,
-              Usz random_seed);
-
-// Function to get random value from C++ code
-Usz custom_vcvin(void* ptr, Usz port_num, Usz a, Usz b);
-// Function to write a CV value to C++ code
-void custom_vcvout(void* ptr, Usz port_num, Usz a, Usz b, Usz value);
+              Usz random_seed, Orca_host const *host);
 
 #ifdef __cplusplus
 }
